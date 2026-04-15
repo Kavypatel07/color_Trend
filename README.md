@@ -1,4 +1,4 @@
-# 🎨 Color Trend — Color Wheel Animation
+# 🎨 Color_Trend — Color Wheel Animation
 
 A cinematic 18-second color showcase animation — built with **zero libraries**, just pure HTML, CSS & Canvas API.
 
@@ -14,10 +14,13 @@ Here are the two interactive variants I built. Both sync perfectly with video cl
 > *(Reference: [YouTube url](https://www.youtube.com/results?search_query=color+wheel+trend))*
 
 <div align="center">
-  <video src="https://github.com/user-attachments/assets/e616fdf1-cbad-4e5f-8bfc-986e4794a3e0" alt="Color Wheel Animation Preview" width="600">
-  <p><i>A cinematic showcase of the "Spinner Variant" built with pure HTML5 Canvas.</i></p>
+  <video src="https://github.com/user-attachments/assets/e616fdf1-cbad-4e5f-8bfc-986e4794a3e0" alt="Color Wheel Animation Preview" width="600" autoplay>
+  <p><i>A cinematic showcase of the "Template Variant" built with pure HTML5 Canvas.</i></p>
 </div>
-
+    
+> *(Perview : [video url](https://github.com/user-attachments/assets/e616fdf1-cbad-4e5f-8bfc-986e4794a3e0))*
+> <p><i>A cinematic showcase of the "Template Variant" built with pure HTML5 Canvas.</i></p>
+> <p><u><i>→ Note : </u> Video perview has no audio attached ❌ ,if you feel the beat🪄 try `Vendredi sur Mer - Écoute chérie` song 🎼which is represent color wheel trend here.</i></p>
 ---
 
 ### 2. Spinner Variant (Cinematic Lock)
@@ -111,4 +114,6 @@ ms         Event
 ---
 
 *Made while learning that browser APIs are way more powerful than I thought 🤯*
-#
+
+
+
