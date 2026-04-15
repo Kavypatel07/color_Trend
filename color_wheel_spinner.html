@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Wheel Spinner — v5</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+SC:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #stage {
+      position: relative;
+      width: 1276px;
+      height: 720px;
+      overflow: hidden;
+      background: #000;
+      transform-origin: center center;
+      flex-shrink: 0;
+    }
+
+    /* ── Background clips & fallbacks ── */
+    .bg-clip {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    .bg-clip.active {
+      opacity: 1;
+    }
+
+    /* ── Black overlay ── */
+    #blackOverlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 6;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.1s linear;
+    }
+
+    /* ── Wheel wrapper ── */
+    #wheelWrapper {
+      position: absolute;
+      z-index: 12;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    #wheelWrapper canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Text card ── */
+    #textCard {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      gap: 6px;
+    }
+
+    #colorName {
+      font-family: 'Playfair Display', 'Georgia', serif;
+      font-weight: 900;
+      font-size: 118px;
+      line-height: 1;
+      letter-spacing: -3px;
+      color: #4488ff;
+      text-transform: lowercase;
+      text-shadow: 0 0 60px currentColor;
+      transition: text-shadow 0.3s;
+    }
+
+    #colorSub {
+      font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+      font-weight: 700;
+      font-size: 38px;
+      letter-spacing: 10px;
+      color: #4488ff;
+      margin-top: 8px;
+      text-shadow: 0 0 30px currentColor;
+    }
+
+    /* ── Dev panel ── */
+    #devPanel {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, .85);
+      border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: #fff;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 9999;
+      min-width: 240px;
+      backdrop-filter: blur(10px);
+      user-select: none;
+    }
+
+    #devPanel h3 {
+      font-size: 10px;
+      letter-spacing: 2px;
+      opacity: .45;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .drow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 5px 0;
+    }
+
+    .drow label {
+      opacity: .55;
+      width: 80px;
+    }
+
+    #devPanel button {
+      background: rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .2);
+      color: #fff;
+      border-radius: 6px;
+      padding: 5px 13px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background .2s;
+    }
+
+    #devPanel button:hover {
+      background: rgba(255, 255, 255, .22);
+    }
+
+    #timeBar {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, .12);
+      border-radius: 2px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+
+    #timeBarFill {
+      height: 100%;
+      background: #4af;
+      border-radius: 2px;
+      width: 0%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="stage">
+
+    <!-- VIDEO CLIPS — 1 intro + 6 color-themed gap clips -->
+
+    <!-- clip0: INTRO · 0–7.2s · BW/forest portrait -->
+    <video class="bg-clip active" id="clip0" autoplay muted loop playsinline>
+      <source src="intro.mp4" type="video/mp4">
+    </video>
+
+    <!-- clip1: BLUE gap 8.2–9.2s · ocean / water -->
+    <video class="bg-clip" id="clip1" muted loop playsinline>
+      <source src="blue.mp4" type="video/mp4">
+    </video>
+
+    <!-- clip2: PINK gap 10–11s · cherry blossom / sunset -->
+    <video class="bg-clip" id="clip2" muted loop playsinline>
+      <source src="pink.mp4" type="video/mp4">
+    </video>
+
+    <!-- clip3: ORANGE gap 11.8–12.8s · desert / warm sunset -->
+    <video class="bg-clip" id="clip3" muted loop playsinline>
+      <source src="orange.mp4" type="video/mp4">
+    </video>
+
+    <!-- clip4: YELLOW gap 13.6–14.4s · sunflower field -->
+    <video class="bg-clip" id="clip4" muted loop playsinline>
+      <source src="yellow.mp4" type="video/mp4">
+    </video>
+
+    <!-- clip5: GREEN gap 15.2–16.2s · lush forest / meadow -->
+    <video class="bg-clip" id="clip5" muted loop playsinline>
+      <source src="green.mp4" type="video/mp4">
+    </video>
+
+    <!-- clip6: WHITE gap 17–18s · bright sky / snow -->
+    <video class="bg-clip" id="clip6" muted loop playsinline>
+      <source src="white.mp4" type="video/mp4">
+    </video>
+
+    <!-- CSS FALLBACK GRADIENTS (colour-matched to each clip) -->
+    <!-- fb0: dark forest - intro -->
+    <div id="fb0" class="bg-clip active"
+      style="background:linear-gradient(145deg,#2a2a2a,#111);z-index:0;opacity:1;transition:none;"></div>
+    <!-- fb1: deep blue ocean -->
+    <div id="fb1" class="bg-clip" style="background:linear-gradient(145deg,#0a2a6a,#051535);z-index:0;"></div>
+    <!-- fb2: pink blossom -->
+    <div id="fb2" class="bg-clip" style="background:linear-gradient(145deg,#6a1a40,#3a0a20);z-index:0;"></div>
+    <!-- fb3: orange sunset -->
+    <div id="fb3" class="bg-clip" style="background:linear-gradient(145deg,#7a2a00,#3a1000);z-index:0;"></div>
+    <!-- fb4: golden yellow -->
+    <div id="fb4" class="bg-clip" style="background:linear-gradient(145deg,#7a6000,#3a2a00);z-index:0;"></div>
+    <!-- fb5: rich green -->
+    <div id="fb5" class="bg-clip" style="background:linear-gradient(145deg,#0a3a10,#051808);z-index:0;"></div>
+    <!-- fb6: bright white/sky -->
+    <div id="fb6" class="bg-clip" style="background:linear-gradient(145deg,#c0d8f0,#8090a8);z-index:0;"></div>
+
+    <!-- Black overlay -->
+    <div id="blackOverlay"></div>
+
+    <!-- Spinning color wheel -->
+    <div id="wheelWrapper">
+      <canvas id="wheelCanvas" width="340" height="340"></canvas>
+    </div>
+
+    <!-- Text card -->
+    <div id="textCard">
+      <div id="colorName">blue</div>
+      <div id="colorSub">蓝色的</div>
+    </div>
+
+  </div>
+
+  <!-- Dev panel -->
+  <div id="devPanel">
+    <h3>Color Wheel Spinner · v5</h3>
+    <div class="drow">
+      <button id="btnRestart">↺ Restart</button>
+      <button id="btnPause">⏸ Pause</button>
+    </div>
+    <div class="drow"><label>Time</label><span id="timecode">0.0 s</span></div>
+    <div class="drow"><label>Phase</label><span id="phaseLabel">—</span></div>
+    <div class="drow"><label>Dot hue</label><span id="hueLabel">—</span></div>
+    <div id="timeBar">
+      <div id="timeBarFill"></div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+    /* ════════════════════════════════════════════════════════════════════
+       COLOR WHEEL SPINNER  ·  v5
+       NEW MECHANIC: The WHEEL ROTATES — dot is FIXED at 12 o'clock (top).
+       The wheel spins CCW bringing each card's color up to the fixed dot.
+       A glow PULSE fires the instant the target color locks under the dot.
+    
+       SPINNING MATH
+       ─────────────
+       drawWheel paints hue H at angle θ = (H/360)*2π − π/2  (no rotation).
+       When wheel rotates by R radians:
+         θ_rendered = H/360*2π − π/2 + R
+       Fixed dot is at 12 o'clock = −π/2.
+       To bring hue H to dot: H/360*2π − π/2 + R = −π/2
+         → R = −H*π/180
+       So wheelRotation = −H*π/180 to show hue H at the top.
+    
+       For monotonic spinning (CCW; R grows more negative):
+         blue  240°  → R₀ = −240*π/180
+         pink  330°  → R₁ = −330*π/180
+         orange 30° (+360=390°) → R₂ = −390*π/180
+         yellow 57° (+360=417°) → R₃ = −417*π/180
+         green 120° (+360=480°) → R₄ = −480*π/180
+         white 175° (+360=535°) → R₅ = −535*π/180
+    
+       TIMELINE (ms)
+       ─────────────────────────────────────────────────────
+         0        BW hold, no wheel
+         200      Wheel pops in CENTER, starts spinning
+         200–3800 Wheel drifts CENTER → RIGHT dock while spinning
+         2600     Dot highlight appears at 12 o'clock (blue colour arrives)
+         4000     Clip1; wheel RIGHT-docked, spinning continues
+         7200     Hard black cut
+         7400–8200  Card 0 "blue"   — spin halts on blue
+         8200–9200  1s clip gap
+         9200–10000 Card 1 "Pink"   — spin to pink
+        10000–11000 1s clip gap
+        11000–11800 Card 2 "orange"
+        11800–12800 1s clip gap + wheel slides R→L
+        12800–13600 Card 3 "yellow" — wheel LEFT
+        13600–14400 1s clip gap
+        14400–15200 Card 4 "green"
+        15200–16200 1s clip gap
+        16200–17000 Card 5 "white"
+        17000–18000 Final clip + fade to black
+       ════════════════════════════════════════════════════════════════════ */
+
+    /* ── Geometry ── */
+    const SW = 1276, SH = 720;
+    const OUTER_R = 158;
+    const INNER_R = 108;
+    const RING_MID = (OUTER_R + INNER_R) / 2;  // ≈133
+    const DOT_R = 22;
+    const TOTAL_MS = 18000;
+
+    /* ── Canvas ── */
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const CX = canvas.width / 2;  // 170
+    const CY = canvas.height / 2;  // 170
+
+    /* ── Wheel dock positions (65% visible = 221px of 340px visible)
+       Center dist from edge = 170 − 119 = 51px                       ── */
+    const PX_CENTER = SW / 2;       // 638
+    const PY_CENTER = SH / 2;       // 360
+    const PX_RIGHT_DOCK = SW - 51;      // 1225  (65% on right)
+    const PX_LEFT_DOCK = 51;           // 51    (65% on left)
+
+    /* ── State ── */
+    let startTime = null;
+    let paused = false;
+    let pauseStamp = 0;
+
+    /* ════════════════════════════════════════════════════════════════════
+       CARDS
+       ════════════════════════════════════════════════════════════════════ */
+    const CARDS = [
+      { word: 'blue', sub: '蓝色的', col: '#5577ff', dotHue: 240 },
+      { word: 'Pink', sub: '红色的', col: '#ff44aa', dotHue: 330 },
+      { word: 'orange', sub: '橙子', col: '#ff8800', dotHue: 30 },
+      { word: 'yellow', sub: '黄色的', col: '#ffee00', dotHue: 57 },
+      { word: 'green', sub: '绿色的', col: '#33ee55', dotHue: 120 },
+      { word: 'white', sub: '白色的', col: '#ffffff', dotHue: 175 },
+    ];
+
+    /* ── Card + clip-gap windows ── */
+    const SEGMENTS = [
+      [7400, 8200, 9200, 0],
+      [9200, 10000, 11000, 1],
+      [11000, 11800, 12800, 2],
+      [12800, 13600, 14400, 3],
+      [14400, 15200, 16200, 4],
+      [16200, 17000, 18000, 5],
+    ];
+
+    /* ════════════════════════════════════════════════════════════════════
+       WHEEL ROTATION KEYFRAMES
+       R = −hue * π/180  (unwrapped to stay monotonically decreasing)
+       Dot is at 12 o'clock; we spin the wheel so hue comes to it.
+       ════════════════════════════════════════════════════════════════════ */
+    const D2R = Math.PI / 180;
+    //         ms       R (radians)                          // hue at dot
+    const ROT_KF = [
+      { ms: 0, r: -150 * D2R },   // ~start  (hue 150°, pre-blue, teal)
+      { ms: 2600, r: -240 * D2R },   // blue appears under dot
+      { ms: 4000, r: -265 * D2R },   // slight continued spin after docking
+      { ms: 7200, r: -330 * D2R },   // pink zone by black screen
+      { ms: 8200, r: -330 * D2R },   // HOLD on pink during blue card
+      { ms: 9200, r: -330 * D2R },   // still holding through clip gap
+      { ms: 10000, r: -390 * D2R },   // orange (30°+360=390°) under dot
+      { ms: 11000, r: -390 * D2R },   // hold for clip gap
+      { ms: 11800, r: -417 * D2R },   // yellow (57°+360=417°)
+      { ms: 13600, r: -417 * D2R },   // hold through yellow card + clip
+      { ms: 14400, r: -480 * D2R },   // green  (120°+360=480°)
+      { ms: 16200, r: -535 * D2R },   // white/cyan (175°+360=535°)
+      { ms: 18000, r: -560 * D2R },   // slight coast after white
+    ];
+
+    /* Per-card the rotation must be exact so colur locks on dot */
+    const CARD_R = [
+      -240 * D2R,   // blue
+      -330 * D2R,   // pink  (330°)
+      -390 * D2R,   // orange (30+360)
+      -417 * D2R,   // yellow (57+360)
+      -480 * D2R,   // green  (120+360)
+      -535 * D2R,   // white  (175+360)
+    ];
+
+    function getWheelRotation(ms) {
+      if (ms <= ROT_KF[0].ms) return ROT_KF[0].r;
+      for (let i = 0; i < ROT_KF.length - 1; i++) {
+        const k1 = ROT_KF[i], k2 = ROT_KF[i + 1];
+        if (ms >= k1.ms && ms < k2.ms) {
+          return k1.r + (k2.r - k1.r) * eio3((ms - k1.ms) / (k2.ms - k1.ms));
+        }
+      }
+      return ROT_KF[ROT_KF.length - 1].r;
+    }
+
+    /* ── Clip / BG switching — 7 total (0=intro, 1-6=color gap clips) ── */
+    const CLIP_COUNT = 7;
+    const clipEls = Array.from({ length: CLIP_COUNT }, (_, i) => document.getElementById('clip' + i));
+    const fbEls = Array.from({ length: CLIP_COUNT }, (_, i) => document.getElementById('fb' + i));
+    let activeBg = 0;
+
+    function setClip(idx) {
+      if (idx === activeBg) return;
+      clipEls[activeBg].classList.remove('active');
+      fbEls[activeBg].classList.remove('active');
+      clipEls[idx].classList.add('active');
+      fbEls[idx].classList.add('active');
+      const v = clipEls[idx];
+      if (v.paused) v.play().catch(() => { });
+      activeBg = idx;
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       MATH
+       ════════════════════════════════════════════════════════════════════ */
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const norm = (v, lo, hi) => clamp((v - lo) / (hi - lo), 0, 1);
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const eio3 = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const eo3 = t => 1 - Math.pow(1 - t, 3);
+
+    /* ════════════════════════════════════════════════════════════════════
+       DRAW HELPERS
+       ════════════════════════════════════════════════════════════════════ */
+
+    /* Draw the spinning colour ring.
+       rotation: offset in radians added to each segment angle.          */
+    function drawWheel(alpha, rotation) {
+      if (alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = clamp(alpha, 0, 1);
+      const STEPS = 720;
+      for (let i = 0; i < STEPS; i++) {
+        const a0 = (i / STEPS) * Math.PI * 2 - Math.PI / 2 + rotation;
+        const a1 = ((i + 1.8) / STEPS) * Math.PI * 2 - Math.PI / 2 + rotation;
+        const hue = Math.round((i / STEPS) * 360);
+        ctx.beginPath();
+        ctx.moveTo(CX + Math.cos(a0) * INNER_R, CY + Math.sin(a0) * INNER_R);
+        ctx.arc(CX, CY, OUTER_R, a0, a1);
+        ctx.arc(CX, CY, INNER_R, a1, a0, true);
+        ctx.closePath();
+        ctx.fillStyle = `hsl(${hue},100%,50%)`;
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    /* Hue currently under the fixed 12-o'clock dot for a given rotation.
+       R = −H*π/180  →  H = −R * 180/π  (mod 360)                       */
+    function hueAtDot(rotation) {
+      return ((-rotation * 180 / Math.PI) % 360 + 360) % 360;
+    }
+
+    /* Draw the FIXED dot at 12 o'clock (top of ring).
+       pulseAmt: 0 = no pulse, 1 = max pulse (used during card show)     */
+    function drawDot(rotation, alpha, pulseAmt) {
+      if (alpha <= 0) return 0;
+
+      const hue = hueAtDot(rotation);
+      /* Fixed position: 12 o'clock = top of ring */
+      const x = CX;
+      const y = CY - RING_MID;          // straight up from center
+
+      /* Pulsing radius */
+      const pulse = 1.0 + 0.14 * pulseAmt * Math.abs(Math.sin(performance.now() / 230));
+      const r = DOT_R * pulse;
+
+      ctx.save();
+      ctx.globalAlpha = clamp(alpha, 0, 1);
+
+      /* Glow burst during pulse */
+      if (pulseAmt > 0.05) {
+        ctx.shadowColor = `hsl(${hue},100%,60%)`;
+        ctx.shadowBlur = 8 + 36 * pulseAmt * Math.abs(Math.sin(performance.now() / 230));
+      } else {
+        ctx.shadowColor = 'rgba(0,0,0,0.75)';
+        ctx.shadowBlur = 14;
+      }
+
+      /* White ring */
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.97)';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+
+      /* Hue fill */
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(x, y, r - 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = `hsl(${hue},100%,52%)`;
+      ctx.fill();
+
+      /* Outer ripple ring — only during pulse */
+      if (pulseAmt > 0.05) {
+        const rippleR = r + 8 + 10 * pulseAmt * Math.abs(Math.sin(performance.now() / 230));
+        const rippleA = 0.4 * pulseAmt * (1 - Math.abs(Math.sin(performance.now() / 230)));
+        ctx.globalAlpha = clamp(alpha * rippleA, 0, 1);
+        ctx.beginPath();
+        ctx.arc(x, y, rippleR, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsl(${hue},100%,65%)`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        /* Second ripple */
+        const rippleR2 = r + 20 + 18 * pulseAmt * Math.abs(Math.sin(performance.now() / 280));
+        const rippleA2 = 0.2 * pulseAmt * (1 - Math.abs(Math.sin(performance.now() / 280)));
+        ctx.globalAlpha = clamp(alpha * rippleA2, 0, 1);
+        ctx.beginPath();
+        ctx.arc(x, y, rippleR2, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsl(${hue},100%,70%)`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+      return hue;
+    }
+
+    /* Draw a subtle highlight notch at 12 o'clock to mark the "reading" point */
+    function drawNotch(alpha) {
+      if (alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = clamp(alpha * 0.7, 0, 1);
+      /* Small triangle pointer just outside the ring */
+      const tipY = CY - OUTER_R - 6;
+      const baseY = CY - OUTER_R - 18;
+      ctx.beginPath();
+      ctx.moveTo(CX, tipY);
+      ctx.lineTo(CX - 6, baseY);
+      ctx.lineTo(CX + 6, baseY);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function placeWheel(cx, cy) {
+      const el = document.getElementById('wheelWrapper');
+      el.style.width = '340px';
+      el.style.height = '340px';
+      el.style.left = (cx - 170) + 'px';
+      el.style.top = (cy - 170) + 'px';
+    }
+
+    function setOverlay(a) {
+      document.getElementById('blackOverlay').style.opacity = clamp(a, 0, 1);
+    }
+
+    function showCard(idx, alpha) {
+      const card = CARDS[clamp(idx, 0, CARDS.length - 1)];
+      const el = document.getElementById('textCard');
+      el.style.opacity = clamp(alpha, 0, 1);
+      document.getElementById('colorName').style.color = card.col;
+      document.getElementById('colorSub').style.color = card.col;
+      document.getElementById('colorName').textContent = card.word;
+      document.getElementById('colorSub').textContent = card.sub;
+    }
+    function hideCard() { document.getElementById('textCard').style.opacity = '0'; }
+
+    /* ════════════════════════════════════════════════════════════════════
+       RENDER
+       ════════════════════════════════════════════════════════════════════ */
+    function render(ms) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      /* ── BG clip selection ──────────────────────────────────────────
+         clip0 = intro (0–7.2s and during any text-card window, since
+                  the black overlay hides it anyway).
+         clip1-6 = colour-matched gap clips, one per card gap:
+           card 0 blue   gap → clip1  (8200–9200ms)
+           card 1 pink   gap → clip2  (10000–11000ms)
+           card 2 orange gap → clip3  (11800–12800ms)
+           card 3 yellow gap → clip4  (13600–14400ms)
+           card 4 green  gap → clip5  (15200–16200ms)
+           card 5 white  gap → clip6  (17000–18000ms)
+      ── */
+      // We need gapCardIdx to know which clip to show during a gap.
+      // Re-scan SEGMENTS here (before the segment loop below) for the BG:
+      let bgClipIdx = 0; // default: intro
+      for (const [cs, ce, ge, idx] of SEGMENTS) {
+        if (ms >= cs && ms < ge && ms >= ce) {
+          bgClipIdx = idx + 1; // gap of card idx → clip(idx+1)
+          break;
+        }
+      }
+      setClip(bgClipIdx);
+
+      // Also: during the very short 7200–7400 transition keep intro showing
+      // (overlay covers it), so bgClipIdx=0 is correct there.
+
+      /* ── Segment detection ── */
+      let activeCard = -1, cardAlpha = 0, inClipGap = false;
+      const FADE = 100;
+      for (const [cs, ce, ge, idx] of SEGMENTS) {
+        if (ms >= cs && ms < ge) {
+          if (ms < ce) {
+            activeCard = idx;
+            cardAlpha = Math.min(clamp((ms - cs) / FADE, 0, 1), clamp((ce - ms) / FADE, 0, 1));
+          } else {
+            inClipGap = true;
+          }
+          break;
+        }
+      }
+
+      /* ── Black overlay ── */
+      let ov = 0;
+      if (ms >= 7200 && ms < 7400) ov = norm(ms, 7200, 7400);
+      else if (activeCard >= 0) ov = 1;
+      else if (ms >= 17900) ov = norm(ms, 17900, 18000);
+      setOverlay(ov);
+
+      /* ── Wheel position: CENTER → RIGHT → slide LEFT ── */
+      let wheelAlpha = 1;
+      if (ms < 200) {
+        wheelAlpha = 0;
+        placeWheel(PX_CENTER, PY_CENTER);
+      } else if (ms < 3800) {
+        const t = eio3(norm(ms, 200, 3800));
+        placeWheel(lerp(PX_CENTER, PX_RIGHT_DOCK, t), PY_CENTER);
+      } else if (ms < 11800) {
+        placeWheel(PX_RIGHT_DOCK, PY_CENTER);
+      } else if (ms < 12800) {
+        const t = eio3(norm(ms, 11800, 12800));
+        placeWheel(lerp(PX_RIGHT_DOCK, PX_LEFT_DOCK, t), PY_CENTER);
+      } else {
+        placeWheel(PX_LEFT_DOCK, PY_CENTER);
+      }
+
+      /* ── Wheel rotation ── */
+      /* During a card, SNAP to the exact card rotation so color is locked */
+      let wheelRot = getWheelRotation(ms);
+      if (activeCard >= 0) {
+        /* Blend from interpolated rotation → exact card rotation over the first 200ms of the card */
+        const lockT = clamp((ms - (SEGMENTS[activeCard][0])) / 200, 0, 1);
+        wheelRot = lerp(wheelRot, CARD_R[activeCard], eo3(lockT));
+      }
+
+      /* ── Dot visibility ── */
+      const dotA = ms < 2600 ? 0 : clamp((ms - 2600) / 200, 0, 1);
+      /* Pulse amount: ramps up when a text card is showing */
+      const pulseAmt = activeCard >= 0 ? clamp((ms - SEGMENTS[activeCard][0]) / 300, 0, 1) : 0;
+
+      /* ── Draw ── */
+      if (wheelAlpha > 0) {
+        drawWheel(wheelAlpha, wheelRot);
+        drawNotch(dotA * wheelAlpha);
+        const h = drawDot(wheelRot, dotA * wheelAlpha, pulseAmt);
+        document.getElementById('hueLabel').textContent = dotA > 0 ? Math.round(h) + '°' : '—';
+      } else {
+        document.getElementById('hueLabel').textContent = '—';
+      }
+
+      /* ── Text card ── */
+      if (activeCard >= 0 && cardAlpha > 0) {
+        showCard(activeCard, cardAlpha);
+        document.getElementById('phaseLabel').textContent =
+          `${CARDS[activeCard].word} · lock at ${CARDS[activeCard].dotHue}°`;
+      } else {
+        hideCard();
+        document.getElementById('phaseLabel').textContent =
+          inClipGap ? '1s clip gap' :
+            ms < 200 ? 'BW hold' :
+              ms < 4000 ? 'center → right · spinning' :
+                ms < 7200 ? 'right dock · spinning' :
+                  ms < 7400 ? 'black cut' :
+                    ms < 11800 ? 'wheel right · text A' :
+                      ms < 12800 ? 'sliding right→left' :
+                        ms < 18000 ? 'wheel left · text B' : 'fade out';
+      }
+
+      /* ── HUD ── */
+      const c = clamp(ms, 0, TOTAL_MS);
+      document.getElementById('timecode').textContent = (c / 1000).toFixed(2) + ' s';
+      document.getElementById('timeBarFill').style.width = (c / TOTAL_MS * 100).toFixed(2) + '%';
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       LOOP + CONTROLS
+       ════════════════════════════════════════════════════════════════════ */
+    function tick(ts) {
+      if (!startTime) startTime = ts;
+      if (!paused) render(ts - startTime);
+      requestAnimationFrame(tick);
+    }
+
+    function scaleStage() {
+      const s = Math.min(window.innerWidth / SW, window.innerHeight / SH);
+      document.getElementById('stage').style.transform = `scale(${s})`;
+    }
+
+    document.getElementById('btnRestart').onclick = () => {
+      startTime = null;
+      paused = false;
+      activeBg = 0;
+      clipEls.forEach((v, i) => { v.classList.toggle('active', i === 0); if (i === 0) v.play().catch(() => { }); });
+      fbEls.forEach((f, i) => { f.classList.toggle('active', i === 0); });
+      document.getElementById('btnPause').textContent = '⏸ Pause';
+    };
+
+    document.getElementById('btnPause').onclick = () => {
+      paused = !paused;
+      document.getElementById('btnPause').textContent = paused ? '▶ Play' : '⏸ Pause';
+      if (paused) {
+        pauseStamp = performance.now();
+        clipEls.forEach(v => v.pause());
+      } else {
+        if (startTime !== null) startTime += performance.now() - pauseStamp;
+        clipEls[activeBg].play().catch(() => { });
+      }
+    };
+
+    window.addEventListener('resize', scaleStage);
+    scaleStage();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+
+</html>
